@@ -97,7 +97,7 @@ function splitWords(el) {
 }
 
 /* ---------------- WebGL: one field of points that changes shape with the scroll ---------------- */
-// Shapes: 0 = planet with ring (hero) · 1 = elliptical galaxy · 2 = star dust.
+// Shapes: 0 = STEAM atom (hero: nucleus + three orbits with moving electrons) · 1 = elliptical galaxy · 2 = star dust.
 const gl = { progress: { v: reduce ? 1 : 0 }, morph: 0, keys: [] };
 
 function buildField(host) {
@@ -113,18 +113,20 @@ function buildField(host) {
 
   const start = new Float32Array(total * 3), planet = new Float32Array(total * 3),
     ring = new Float32Array(total * 3), dust = new Float32Array(total * 3),
-    rnd = new Float32Array(total), kind = new Float32Array(total);
-  const planetN = Math.floor(N * 0.62), tilt = -0.42, c45 = Math.cos(0.45), s45 = Math.sin(0.45);
+    rnd = new Float32Array(total), kind = new Float32Array(total), orb = new Float32Array(total);
+  const coreN = Math.floor(N * 0.3);
   for (let i = 0; i < total; i++) {
     let x, y, z, k;
-    if (i < planetN) {
-      const t = (i + 0.5) / planetN, phi = Math.acos(1 - 2 * t), th = Math.PI * (1 + Math.sqrt(5)) * i, r = 1.25 + (Math.random() - 0.5) * 0.03;
+    if (i < coreN) {
+      // Nucleus: a dense ball of points (a little thicker than a shell so it reads as solid).
+      const t = (i + 0.5) / coreN, phi = Math.acos(1 - 2 * t), th = Math.PI * (1 + Math.sqrt(5)) * i, r = 0.55 * Math.cbrt(0.35 + 0.65 * Math.random());
       x = r * Math.sin(phi) * Math.cos(th); y = r * Math.cos(phi); z = r * Math.sin(phi) * Math.sin(th); k = 0;
     } else if (i < N) {
-      const a = Math.random() * Math.PI * 2, rr = 1.75 + Math.pow(Math.random(), 1.6) * 0.75;
-      const lx = Math.cos(a) * rr, lz = Math.sin(a) * rr, ly = (Math.random() - 0.5) * 0.04;
-      x = lx; y = ly * Math.cos(tilt) - lz * Math.sin(tilt); z = ly * Math.sin(tilt) + lz * Math.cos(tilt);
-      const nx = x * c45 - y * s45; y = x * s45 + y * c45; x = nx; k = 1;
+      // Orbits: the shader computes the position from (angle, jitter, electron flag) so points travel along
+      // the ellipse. ~9% of each orbit is packed into a bright clump: the electron.
+      const o = (i - coreN) % 3, e = Math.random() < 0.09;
+      const a = e ? o * 2.1 + (Math.random() - 0.5) * 0.16 : Math.random() * Math.PI * 2;
+      x = a; y = (Math.random() - 0.5) * (e ? 0.1 : 0.05); z = e ? 1 : 0; k = 1; orb[i] = o + 1;
     } else {
       x = (Math.random() - 0.5) * 22; y = (Math.random() - 0.5) * 12; z = -4 - Math.random() * 10; k = 2;
     }
@@ -149,6 +151,7 @@ function buildField(host) {
   geo.setAttribute('aDust', new BufferAttribute(dust, 3));
   geo.setAttribute('aRand', new BufferAttribute(rnd, 1));
   geo.setAttribute('aKind', new BufferAttribute(kind, 1));
+  geo.setAttribute('aOrb', new BufferAttribute(orb, 1));
 
   const uniforms = {
     uTime: { value: 0 }, uProgress: { value: gl.progress.v }, uMorph: { value: 0 },
@@ -159,13 +162,20 @@ function buildField(host) {
     uniforms, transparent: true, depthWrite: false, blending: AdditiveBlending,
     vertexShader: /* glsl */`
       uniform float uTime, uProgress, uMorph, uPixel; uniform vec3 uMouse;
-      attribute vec3 aPlanet, aRing, aDust; attribute float aRand, aKind;
+      attribute vec3 aPlanet, aRing, aDust; attribute float aRand, aKind, aOrb;
       varying float vMix, vAlpha;
       vec3 rotY(vec3 p, float a){ float c=cos(a), s=sin(a); return vec3(c*p.x + s*p.z, p.y, -s*p.x + c*p.z); }
       vec3 rotX(vec3 p, float a){ float c=cos(a), s=sin(a); return vec3(p.x, c*p.y - s*p.z, s*p.y + c*p.z); }
+      vec3 rotZ(vec3 p, float a){ float c=cos(a), s=sin(a); return vec3(c*p.x - s*p.y, s*p.x + c*p.y, p.z); }
       float stag(float x){ float d = aRand * 0.3; float t = clamp((x - d) / 0.7, 0.0, 1.0); return t*t*(3.0-2.0*t); }
       void main(){
-        vec3 planet = rotY(aPlanet, uTime * 0.12);
+        vec3 planet;
+        if (aOrb > 0.5) {
+          float a = aPlanet.x + uTime * 0.55;
+          vec3 o = vec3(cos(a) * 2.35, sin(a) * 0.82 + aPlanet.y, aPlanet.y * 0.6);
+          planet = rotZ(o, (aOrb - 1.0) * 1.0472 + 0.35);
+        } else planet = rotY(aPlanet, uTime * 0.25);
+        planet = rotX(rotY(planet, sin(uTime * 0.25) * 0.35), 0.18);
         vec3 ring = rotX(rotY(aRing, uTime * 0.035), -0.5);
         vec3 dust = aDust + vec3(sin(uTime*0.13 + aRand*30.0), cos(uTime*0.11 + aRand*17.0), 0.0) * 0.35;
         float m1 = stag(clamp(uMorph, 0.0, 1.0)), m2 = stag(clamp(uMorph - 1.0, 0.0, 1.0));
@@ -180,7 +190,8 @@ function buildField(host) {
         }
         vec4 mv = viewMatrix * wp;
         gl_Position = projectionMatrix * mv;
-        float size = aKind > 1.5 ? 1.8 : (aKind > 0.5 ? 2.6 : 3.1);
+        float elec = aOrb > 0.5 ? aPlanet.z : 0.0;
+        float size = aKind > 1.5 ? 1.8 : (aKind > 0.5 ? mix(2.4, 3.6, elec * (1.0 - m1)) : 3.1);
         size *= mix(1.0, 0.9, m1);
         gl_PointSize = size * uPixel * (7.0 / -mv.z) * (0.8 + aRand * 0.6);
         vMix = (aKind > 0.5 && aKind < 1.5 && m1 < 0.5) ? 1.0 : aRand;
