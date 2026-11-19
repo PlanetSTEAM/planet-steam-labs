@@ -556,6 +556,57 @@ function hrows() {
   });
 }
 
+
+/* ---------------- Project videos: slots filled from assets/videos/videos.json, played in a lightbox ---------------- */
+function videos() {
+  const slots = $$('[data-video]'), triggers = $$('[data-play]');
+  if (!slots.length && !triggers.length) return;
+  let lib = {};
+  const box = document.createElement('div');
+  box.className = 'vbox'; box.hidden = true;
+  box.setAttribute('role', 'dialog'); box.setAttribute('aria-modal', 'true'); box.setAttribute('aria-label', 'Video');
+  box.innerHTML = '<div class="vbox-in"><div class="vbox-head"><span class="vbox-title"></span><button type="button" class="vbox-x" aria-label="Cerrar video">✕</button></div><div class="vbox-media"></div></div>';
+  document.body.appendChild(box);
+  const media = $('.vbox-media', box), title = $('.vbox-title', box);
+  let back = null;
+  const close = () => { media.innerHTML = ''; box.hidden = true; document.documentElement.classList.remove('menu-open'); back?.focus(); };
+  const open = (key, from) => {
+    const v = lib[key]; if (!v) return;
+    back = from || null; title.textContent = v.title || '';
+    media.innerHTML = v.youtube
+      ? `<iframe src="https://www.youtube-nocookie.com/embed/${encodeURIComponent(v.youtube)}?autoplay=1&rel=0" title="${(v.title || 'Video').replace(/"/g, '')}" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>`
+      : `<video src="${v.src}" ${v.poster ? `poster="${v.poster}"` : ''} controls autoplay playsinline preload="auto"></video>`;
+    box.hidden = false; document.documentElement.classList.add('menu-open');
+    $('.vbox-x', box).focus();
+  };
+  $('.vbox-x', box).addEventListener('click', close);
+  box.addEventListener('click', (e) => { if (e.target === box) close(); });
+  addEventListener('keydown', (e) => { if (e.key === 'Escape' && !box.hidden) close(); });
+
+  fetch('assets/videos/videos.json', { cache: 'no-cache' }).then((r) => (r.ok ? r.json() : {})).catch(() => ({})).then((data) => {
+    lib = data || {};
+    slots.forEach((slot) => {
+      const key = slot.dataset.video, v = lib[key]; if (!v) return;
+      const poster = v.poster || (v.youtube ? `https://i.ytimg.com/vi/${encodeURIComponent(v.youtube)}/hqdefault.jpg` : '');
+      const btn = document.createElement('button');
+      btn.type = 'button'; btn.className = 'vthumb';
+      btn.setAttribute('aria-label', 'Ver video: ' + (v.title || key));
+      btn.innerHTML = `${poster ? `<img src="${poster}" alt="" loading="lazy" decoding="async">` : ''}<span class="vplay" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M7 4l13 8-13 8z"/></svg></span>${v.duration ? `<span class="vdur">${v.duration}</span>` : ''}`;
+      btn.addEventListener('click', () => open(key, btn));
+      const card = slot.closest('article');
+      // With a video, the thumbnail goes to the top of the card and the "coming soon" line disappears.
+      if (card && !slot.closest('.startup-card')) { card.insertBefore(btn, card.firstChild); slot.remove(); }
+      else { slot.replaceWith(btn); }
+    });
+    triggers.forEach((t) => {
+      const v = lib[t.dataset.play];
+      if (!v) { if (t.classList.contains('star-video')) t.hidden = true; return; }
+      t.addEventListener('click', () => open(t.dataset.play, t));
+    });
+    $$('[data-dur]').forEach((d) => { const v = lib[d.dataset.dur]; if (v && v.duration) d.textContent = v.duration; });
+  });
+}
+
 /* ---------------- Magnetic buttons ---------------- */
 function magnetic() {
   if (reduce || !finePointer) return;
@@ -577,6 +628,7 @@ const host = $('#gl');
 if (host) buildField(host);
 menu();
 hrows();
+videos();
 intro();
 const later = window.requestIdleCallback || ((fn) => setTimeout(fn, 120));
 later(() => {
