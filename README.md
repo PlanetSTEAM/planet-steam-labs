@@ -12,7 +12,20 @@ La fuente es `index.html` (incluye estilos e interacciones). Desde esta carpeta:
 python -m http.server 8090 --bind 127.0.0.1
 ```
 
-Abra http://127.0.0.1:8090/. No requiere dependencias ni compilación.
+Abra http://127.0.0.1:8090/. Para ver la página no hace falta instalar nada.
+
+## Efectos (fx.js)
+
+Los movimientos (fondo de puntos 3D, apariciones al hacer scroll, demo animada, carrusel y stack) viven en `src/fx.js`
+y usan three.js y GSAP + ScrollTrigger. `fx.js` en la raíz es la versión empaquetada que carga la página.
+Si cambia `src/fx.js`, vuelva a generarla:
+
+```powershell
+npm install
+npm run build
+```
+
+Sin `fx.js` la página sigue funcionando y mostrando todo su contenido, solo que sin animaciones.
 
 ## Publicar
 

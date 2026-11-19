@@ -1,0 +1,8 @@
+{
+  "producto": {
+    "src": "assets/videos/planetsteam-demo.mp4",
+    "poster": "assets/videos/planetsteam-demo.jpg",
+    "title": "Planet STEAM: demo del producto",
+    "duration": "0:28"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "name": "planet-steam-labs",
+  "private": true,
+  "description": "Capa de movimiento de la web (three.js + GSAP/ScrollTrigger), empaquetada en fx.js",
+  "scripts": {
+    "build": "esbuild src/fx.js --bundle --minify --format=iife --target=es2019 --legal-comments=none --outfile=fx.js"
+  },
+  "dependencies": {
+    "three": "^0.187.0",
+    "gsap": "^3.15.1"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.2"
+  }
+}
