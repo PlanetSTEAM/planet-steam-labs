@@ -42,6 +42,7 @@ document.addEventListener('click', (e) => {
   e.preventDefault();
   history.pushState(null, '', '#' + id);
   window.dispatchEvent(new HashChangeEvent('hashchange'));
+  revealInRow(el);
   requestAnimationFrame(() => {
     const inCatalog = el.closest('#servicios') && el !== $('#servicios') && innerWidth > 640;
     const offset = -(inCatalog ? 250 : 96);
@@ -49,6 +50,13 @@ document.addEventListener('click', (e) => {
     else scrollTo({ top: el.getBoundingClientRect().top + scrollY + offset, behavior: reduce ? 'auto' : 'smooth' });
   });
 });
+
+function revealInRow(el) {
+  const row = el && el.closest('.hrow');
+  if (row) row.scrollTo({ left: el.offsetLeft - row.offsetLeft - 2, behavior: 'auto' });
+}
+window.addEventListener('hashchange', () => revealInRow(document.getElementById(decodeURIComponent(location.hash.slice(1)))));
+if (location.hash) revealInRow(document.getElementById(decodeURIComponent(location.hash.slice(1))));
 
 /* ---------------- Header: hides going down, returns going up ---------------- */
 const head = $('#site-head');
@@ -258,11 +266,12 @@ function buildField(host) {
 function measureKeys() {
   const top = (sel) => { const e = $(sel); return e ? e.getBoundingClientRect().top + scrollY : null; };
   const vh = innerHeight, k = [[0, 0]];
-  const cat = top('#demo') ?? top('#servicios'), quick = top('#quick'), met = top('#metodologia') ?? top('#stack'), metEl = $('#metodologia') || $('#stack'), metEnd = met != null ? met + metEl.offsetHeight : null;
-  if (cat != null) k.push([cat - vh * 0.6, 0.05], [cat, 1]);
-  if (quick != null) k.push([quick - vh * 0.3, 1], [quick + vh * 0.2, 2]);
-  if (met != null) k.push([met - vh * 0.9, 2], [met - vh * 0.1, 1], [metEnd - vh * 0.6, 1], [metEnd, 2]);
-  gl.keys = k.filter((p) => p[0] != null).sort((a, b) => a[0] - b[0]);
+  const start = top('#demo') ?? top('#servicios');
+  const endEl = $('#stack') || $('#servicios');
+  const end = endEl ? endEl.getBoundingClientRect().top + scrollY + endEl.offsetHeight : null;
+  if (start != null) k.push([start - vh * 0.6, 0.05], [start, 1]);
+  if (end != null) k.push([end - vh * 0.3, 1], [end + vh * 0.4, 2]);
+  gl.keys = k.sort((a, b) => a[0] - b[0]);
 }
 
 /* ---------------- Page choreography ---------------- */
@@ -524,6 +533,29 @@ function marquee() {
   new IntersectionObserver(() => { visible = state.some((s) => { const r = s.row.getBoundingClientRect(); return r.bottom > 0 && r.top < innerHeight; }); }).observe(rows[rows.length - 1]);
 }
 
+
+/* ---------------- Horizontal rows: arrows + count (native scrolling, no JS per frame) ---------------- */
+function hrows() {
+  const svg = (d) => `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="${d}"/></svg>`;
+  $$('.hrow').forEach((row) => {
+    const items = [...row.children]; if (items.length < 2) return;
+    const ctl = document.createElement('div'); ctl.className = 'row-ctl';
+    const prevEl = row.previousElementSibling, hasCount = prevEl && /\d/.test(prevEl.textContent);
+    ctl.innerHTML = `${hasCount ? '' : `<span>${items.length}</span>`}<button type="button" class="row-btn" aria-label="Anterior">${svg('M19 12H5M11 18l-6-6 6-6')}</button><button type="button" class="row-btn" aria-label="Siguiente">${svg('M5 12h14M13 6l6 6-6 6')}</button>`;
+    const prev = row.previousElementSibling;
+    const head = document.createElement('div'); head.className = 'row-head';
+    if (prev && prev.matches('h3')) { prev.before(head); head.append(prev, ctl); } else { head.append(document.createElement('span'), ctl); row.before(head); }
+    const [bPrev, bNext] = ctl.querySelectorAll('button');
+    const step = () => (items[0].getBoundingClientRect().width + 16) * Math.max(1, Math.floor(row.clientWidth / (items[0].getBoundingClientRect().width + 16)));
+    bPrev.addEventListener('click', () => row.scrollBy({ left: -step(), behavior: reduce ? 'auto' : 'smooth' }));
+    bNext.addEventListener('click', () => row.scrollBy({ left: step(), behavior: reduce ? 'auto' : 'smooth' }));
+    let raf = 0;
+    const upd = () => { raf = 0; bPrev.disabled = row.scrollLeft < 4; bNext.disabled = row.scrollLeft + row.clientWidth >= row.scrollWidth - 4; };
+    row.addEventListener('scroll', () => { if (!raf) raf = requestAnimationFrame(upd); }, { passive: true });
+    upd();
+  });
+}
+
 /* ---------------- Magnetic buttons ---------------- */
 function magnetic() {
   if (reduce || !finePointer) return;
@@ -544,6 +576,7 @@ function magnetic() {
 const host = $('#gl');
 if (host) buildField(host);
 menu();
+hrows();
 intro();
 const later = window.requestIdleCallback || ((fn) => setTimeout(fn, 120));
 later(() => {

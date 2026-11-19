@@ -53,3 +53,6 @@ Converted from SVG to transparent PNG without redrawing. Brand names and marks b
 - opentelemetry: https://cdn.simpleicons.org/opentelemetry
 - keycloak: https://cdn.simpleicons.org/keycloak
 - openbao: https://cdn.simpleicons.org/openbao
+Added Nov 2026 (same method: original artwork converted to 120x96 transparent PNG, not redrawn):
+- claude, vercel, r, githubactions, sentry, threejs, jupyter, scikitlearn, sqlserver (microsoftsqlserver), huggingface: Devicon (MIT) — https://github.com/devicons/devicon/tree/master/icons
+- databricks, snowflake, crewai, stripe, solana, quarto, bigquery (googlebigquery): Simple Icons (CC0) — https://simpleicons.org, rendered in each brand's official color
