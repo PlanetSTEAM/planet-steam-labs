@@ -16,8 +16,8 @@ Abra http://127.0.0.1:8090/. Para ver la página no hace falta instalar nada.
 
 ## Efectos (fx.js)
 
-Los movimientos (fondo de puntos 3D, apariciones al hacer scroll, scroll suave, demo animada, carrusel y stack) viven en `src/fx.js`
-y usan three.js, GSAP + ScrollTrigger y Lenis. `fx.js` en la raíz es la versión empaquetada que carga la página.
+Los movimientos (fondo de puntos 3D, apariciones al hacer scroll, demo animada, carrusel y stack) viven en `src/fx.js`
+y usan three.js y GSAP + ScrollTrigger. `fx.js` en la raíz es la versión empaquetada que carga la página.
 Si cambia `src/fx.js`, vuelva a generarla:
 
 ```powershell

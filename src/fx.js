@@ -1,8 +1,8 @@
 // Planet STEAM Labs — motion layer.
-// Same stack as trinaxcode (three.js + GSAP/ScrollTrigger + Lenis) with guardrails:
+// Same family as trinaxcode (three.js + GSAP/ScrollTrigger) with guardrails:
 //  * one WebGL scene, paused when off-screen or tab hidden, DPR capped, fewer points on weak devices
 //  * animations only touch transform/opacity
-//  * Lenis only on mouse/trackpad devices; everything off with "reduce motion"
+//  * native scroll (Lenis removed: it made scrolling feel laggy on integrated GPUs); everything off with "reduce motion"
 //  * content is visible without JS: hidden states are set here, never in CSS
 import {
   Scene, PerspectiveCamera, WebGLRenderer, BufferGeometry, BufferAttribute,
@@ -10,25 +10,26 @@ import {
 } from 'three';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import Lenis from 'lenis';
 
 gsap.registerPlugin(ScrollTrigger);
 
 const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const finePointer = matchMedia('(pointer: fine)').matches;
-const weak = (navigator.hardwareConcurrency || 4) <= 4 || innerWidth < 760;
+function gpuName() {
+  try {
+    const c = document.createElement('canvas').getContext('webgl');
+    const ext = c && c.getExtension('WEBGL_debug_renderer_info');
+    return ext ? String(c.getParameter(ext.UNMASKED_RENDERER_WEBGL)) : '';
+  } catch (e) { return ''; }
+}
+const integratedGpu = /intel|uhd|iris|mali|adreno|powervr|apple gpu|swiftshader|llvmpipe|microsoft basic/i.test(gpuName());
+const weak = integratedGpu || (navigator.hardwareConcurrency || 4) <= 4 || innerWidth < 760;
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
 
 /* ---------------- Smooth scroll ---------------- */
-let lenis = null;
-if (!reduce && finePointer) {
-  lenis = new Lenis({ lerp: 0.11, wheelMultiplier: 0.95 });
-  lenis.on('scroll', ScrollTrigger.update);
-  gsap.ticker.add((t) => lenis.raf(t * 1000));
-  gsap.ticker.lagSmoothing(0);
-  document.documentElement.classList.add('has-lenis');
-}
+// Native scroll (no Lenis): the browser scrolls on the GPU, with no JS inertia that feels like lag.
+const lenis = null;
 
 // In-page links: smooth scroll with room for the fixed header, and keep the page's
 // own #hash behaviour (filters, highlighting a card) by firing hashchange ourselves.
@@ -92,14 +93,14 @@ function splitWords(el) {
 const gl = { progress: { v: reduce ? 1 : 0 }, morph: 0, keys: [] };
 
 function buildField(host) {
-  const N = weak ? 4500 : 9000, STARS = weak ? 300 : 700, total = N + STARS;
+  const N = weak ? 3200 : 8000, STARS = weak ? 250 : 600, total = N + STARS;
   const scene = new Scene();
   const camera = new PerspectiveCamera(42, 1, 0.1, 100);
   camera.position.set(0, 0, 7.2);
   let renderer;
   try { renderer = new WebGLRenderer({ antialias: false, alpha: true, powerPreference: 'high-performance' }); }
   catch (err) { return null; }
-  renderer.setPixelRatio(Math.min(devicePixelRatio || 1, weak ? 1.25 : 1.5));
+  renderer.setPixelRatio(weak ? 1 : Math.min(devicePixelRatio || 1, 1.5));
   host.appendChild(renderer.domElement);
 
   const start = new Float32Array(total * 3), planet = new Float32Array(total * 3),
@@ -225,7 +226,8 @@ function buildField(host) {
   function frame(now) {
     if (running) raf = requestAnimationFrame(frame);
     const settled = gl.morph > 1.98 && Math.abs(morphAt(scrollY) - gl.morph) < 0.01;
-    if (settled && (skip = (skip + 1) % 2)) return;   // dust is slow: 30 fps is enough there
+    const every = settled ? 6 : (weak ? 2 : 1);          // dust ~10 fps, weak GPUs 30 fps, others 60
+    skip = (skip + 1) % every; if (skip) return;
     const dt = Math.min(0.05, (now - last) / 1000); last = now;
     gl.morph += (morphAt(scrollY) - gl.morph) * Math.min(1, dt * 5);
     uniforms.uTime.value += dt;
@@ -354,9 +356,6 @@ function scrollScenes() {
     gsap.from('.g-fg', { strokeDasharray: '0 100', duration: 1.6, ease: 'power2.out', scrollTrigger: { trigger: star, start: 'top 70%', once: true } });
     gsap.from('.bars i', { backgroundSize: '0% 100%', duration: 1.2, stagger: 0.12, ease: 'power2.out', scrollTrigger: { trigger: star, start: 'top 70%', once: true } });
   }
-
-  // Ghost section numbers drift slower than the page.
-  $$('.ghost').forEach((g) => gsap.fromTo(g, { yPercent: -20 }, { yPercent: 25, ease: 'none', scrollTrigger: { trigger: g.parentElement, start: 'top bottom', end: 'bottom top', scrub: true } }));
 
   // Tech chips: a gentle wave as they enter.
   gsap.from('.s191', { y: 18, opacity: 0, stagger: 0.04, duration: 0.5, scrollTrigger: { trigger: '.s189', start: 'top 92%', once: true } });
