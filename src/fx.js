@@ -569,13 +569,14 @@ function videos() {
   document.body.appendChild(box);
   const media = $('.vbox-media', box), title = $('.vbox-title', box);
   let back = null;
-  const close = () => { media.innerHTML = ''; box.hidden = true; document.documentElement.classList.remove('menu-open'); back?.focus(); };
+  const close = () => { media.innerHTML = ''; box.hidden = true; $$('.vthumb video.on').forEach((x) => x.play().catch(() => {})); document.documentElement.classList.remove('menu-open'); back?.focus(); };
   const open = (key, from) => {
     const v = lib[key]; if (!v) return;
     back = from || null; title.textContent = v.title || '';
     media.innerHTML = v.youtube
       ? `<iframe src="https://www.youtube-nocookie.com/embed/${encodeURIComponent(v.youtube)}?autoplay=1&rel=0" title="${(v.title || 'Video').replace(/"/g, '')}" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>`
       : `<video src="${v.src}" ${v.poster ? `poster="${v.poster}"` : ''} controls autoplay playsinline preload="auto"></video>`;
+    $$('.vthumb video').forEach((x) => x.pause());
     box.hidden = false; document.documentElement.classList.add('menu-open');
     $('.vbox-x', box).focus();
   };
@@ -585,6 +586,7 @@ function videos() {
 
   fetch('assets/videos/videos.json', { cache: 'no-cache' }).then((r) => (r.ok ? r.json() : {})).catch(() => ({})).then((data) => {
     lib = data || {};
+    const previews = [], previewOf = new WeakMap();
     slots.forEach((slot) => {
       const key = slot.dataset.video, v = lib[key]; if (!v) return;
       const poster = v.poster || (v.youtube ? `https://i.ytimg.com/vi/${encodeURIComponent(v.youtube)}/hqdefault.jpg` : '');
@@ -592,12 +594,35 @@ function videos() {
       btn.type = 'button'; btn.className = 'vthumb';
       btn.setAttribute('aria-label', 'Ver video: ' + (v.title || key));
       btn.innerHTML = `${poster ? `<img src="${poster}" alt="" loading="lazy" decoding="async">` : ''}<span class="vplay" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M7 4l13 8-13 8z"/></svg></span>${v.duration ? `<span class="vdur">${v.duration}</span>` : ''}`;
+      const reel = !!slot.closest('.star-reel');
+      if (reel) btn.insertAdjacentHTML('beforeend', `<span class="vcap">${v.title || 'Ver el video'}</span>`);
       btn.addEventListener('click', () => open(key, btn));
+      // A muted preview of the MP4 plays inside the thumbnail while it is on screen,
+      // so the card looks like a video and not like a static button.
+      if (v.src && !reduce && !navigator.connection?.saveData) previews.push([btn, v]);
       const card = slot.closest('article');
       // With a video, the thumbnail goes to the top of the card and the "coming soon" line disappears.
-      if (card && !slot.closest('.startup-card')) { card.insertBefore(btn, card.firstChild); slot.remove(); }
+      if (card && !reel && !slot.closest('.startup-card')) { card.insertBefore(btn, card.firstChild); slot.remove(); }
       else { slot.replaceWith(btn); }
     });
+    // The preview file is only requested when the thumbnail gets close to the screen.
+    if (previews.length && 'IntersectionObserver' in window) {
+      const io = new IntersectionObserver((entries) => entries.forEach((e) => {
+        const btn = e.target, v = previewOf.get(btn);
+        let vid = $('video', btn);
+        if (e.isIntersecting) {
+          if (!vid) {
+            vid = document.createElement('video');
+            vid.muted = true; vid.loop = true; vid.playsInline = true; vid.preload = 'auto';
+            vid.setAttribute('aria-hidden', 'true'); vid.src = v.src;
+            vid.addEventListener('playing', () => vid.classList.add('on'), { once: true });
+            btn.insertBefore(vid, btn.firstChild.nextSibling);
+          }
+          vid.play().catch(() => {});
+        } else if (vid) vid.pause();
+      }), { rootMargin: '200px 0px' });
+      previews.forEach(([btn, v]) => { previewOf.set(btn, v); io.observe(btn); });
+    }
     triggers.forEach((t) => {
       const v = lib[t.dataset.play];
       if (!v) { if (t.classList.contains('star-video')) t.hidden = true; return; }
