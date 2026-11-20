@@ -32,3 +32,17 @@ Sin `fx.js` la página sigue funcionando y mostrando todo su contenido, solo que
 GitHub Pages sirve la raíz de la rama `main`. Tras revisar los cambios, haga commit y push.
 El formulario prepara un correo a admin@planetsteam.app; el visitante debe enviarlo desde su cliente de correo.
 Las vistas gráficas son ilustrativas y las demos usan datos de ejemplo.
+
+## Páginas
+
+La web se divide para que la portada sea corta y cada línea de servicio tenga su detalle:
+
+| Página | Contenido |
+|---|---|
+| `index.html` | Inicio, 01 En acción, 02 Stack, 03 Servicios (resumen con enlaces), 04 Producto, 05 Portafolio, 06 Equipo, 07 Contacto |
+| `catalogo.html` | Soluciones rápidas (Quick, 18) y Soluciones de negocio (Business, 30) |
+| `migraciones.html` | 54 rutas de migración, con filtro por área |
+| `enterprise.html` | Arquitecturas de referencia por industria y Startups |
+
+- Todas comparten `site.css` (se descarga una vez y queda en caché) y `fx.js`. Las páginas de detalle no cargan el fondo 3D, por eso abren más rápido.
+- Cada página trae el formulario de contacto. El formulario envía con FormSubmit a `admin@planetsteam.app`; la primera vez llega un correo de activación que hay que confirmar. Si el envío falla, abre el correo del usuario como respaldo.
