@@ -56,3 +56,6 @@ Converted from SVG to transparent PNG without redrawing. Brand names and marks b
 Added Nov 2026 (same method: original artwork converted to 120x96 transparent PNG, not redrawn):
 - claude, vercel, r, githubactions, sentry, threejs, jupyter, scikitlearn, sqlserver (microsoftsqlserver), huggingface: Devicon (MIT) — https://github.com/devicons/devicon/tree/master/icons
 - databricks, snowflake, crewai, stripe, solana, quarto, bigquery (googlebigquery): Simple Icons (CC0) — https://simpleicons.org, rendered in each brand's official color
+Added Nov 2026, from Luis's CV (same method, 120x96 transparent PNG):
+- pytorch, airflow (apacheairflow), kafka (apachekafka), kubernetes, terraform, grafana, playwright, spark (apachespark), streamlit, slack, ollama: Devicon (MIT) — https://github.com/devicons/devicon/tree/master/icons
+- mlflow, langchain, mcp (modelcontextprotocol), gemini (googlegemini), hubspot: Simple Icons (CC0) — https://simpleicons.org, in each brand's color
