@@ -331,7 +331,7 @@ function scrollScenes() {
   });
 
   // Cards: staggered entrance in batches (one observer for all of them).
-  const cards = $$('.s023,.s036,.s047,.s063,.s075,.s088,.s091,.s135,.s139,.s143,.s193,.s212,.startup-card')
+  const cards = $$('.s023,.s036,.s047,.s063,.s075,.s088,.s091,.s135,.s139,.s143,.s193,.s212,.startup-card,.mig-card')
     .filter((c) => c.getBoundingClientRect().top > innerHeight * 0.95 && !c.closest('.car'));
   // Reveal with IntersectionObserver: independent of layout measurements, so cards never stay hidden.
   gsap.set(cards, { y: 36, opacity: 0 });
@@ -568,6 +568,22 @@ function hrows() {
 }
 
 
+/* ---------------- Migraciones: filter the row by area ---------------- */
+function migTabs() {
+  const tabs = $$('.mig-tab'), row = $('.mig-row');
+  if (!tabs.length || !row) return;
+  const cards = $$('.mig-card', row);
+  tabs.forEach((t) => t.addEventListener('click', () => {
+    const a = t.dataset.area;
+    tabs.forEach((x) => { const on = x === t; x.classList.toggle('on', on); x.setAttribute('aria-pressed', String(on)); });
+    cards.forEach((c) => { c.hidden = a !== 'all' && c.dataset.area !== a; });
+    row.scrollTo({ left: 0 });
+    row.dispatchEvent(new Event('scroll'));
+    // Cards that were never on screen may still be waiting for their reveal animation.
+    gsap.set(cards, { y: 0, opacity: 1 });
+  }));
+}
+
 /* ---------------- Project videos: slots filled from assets/videos/videos.json, played in a lightbox ---------------- */
 function videos() {
   const slots = $$('[data-video]'), triggers = $$('[data-play]');
@@ -664,6 +680,7 @@ const host = $('#gl');
 if (host) buildField(host);
 menu();
 hrows();
+migTabs();
 videos();
 intro();
 const later = window.requestIdleCallback || ((fn) => setTimeout(fn, 120));
