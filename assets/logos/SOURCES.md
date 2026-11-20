@@ -58,4 +58,9 @@ Added Nov 2026 (same method: original artwork converted to 120x96 transparent PN
 - databricks, snowflake, crewai, stripe, solana, quarto, bigquery (googlebigquery): Simple Icons (CC0) — https://simpleicons.org, rendered in each brand's official color
 Added Nov 2026, from Luis's CV (same method, 120x96 transparent PNG):
 - pytorch, airflow (apacheairflow), kafka (apachekafka), kubernetes, terraform, grafana, playwright, spark (apachespark), streamlit, slack, ollama: Devicon (MIT) — https://github.com/devicons/devicon/tree/master/icons
-- mlflow, langchain, mcp (modelcontextprotocol), gemini (googlegemini), hubspot: Simple Icons (CC0) — https://simpleicons.org, in each brand's color
+- mlflow, langchain, mcp (modelcontextprotocol), hubspot: Simple Icons (CC0) — https://simpleicons.org, in each brand's color
+- claudecode, antigravity: Devicon (MIT) — https://github.com/devicons/devicon/tree/master/icons
+Official sources (the companies' own GitHub repositories), Nov 2026:
+- kiro: kirodotdev/Kiro — assets/kiro-icon.png
+- codex: OpenAI logomark from openai/openai-cookbook — examples/agents_sdk/deployment_manager/frontend/src/openai-logomark.svg (Codex is an OpenAI product)
+- gemini: google-gemini/cookbook — quickstarts/file-api/sample_data/gemini_logo.png
